@@ -8,7 +8,7 @@
 .venv\Scripts\python.exe -m pip install -e ".[dev]"
 ```
 
-复制 `.env.example` 为 `.env`，填入 `OPENAI_API_KEY`。密钥不会被提交到 Git。
+复制 `.env.example` 为 `.env`，填入 `OPENAI_API_KEY` 和 `OPENAI_BASE_URL`。`OPENAI_BASE_URL` 可指向官方 `https://api.openai.com/v1` 或兼容 Responses API 的代理地址。密钥不会被提交到 Git。
 
 ## 执行
 

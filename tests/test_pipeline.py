@@ -5,6 +5,17 @@ from pathlib import Path
 from PIL import Image
 
 
+def test_openai_client_reads_base_url_from_environment(monkeypatch) -> None:
+    from ppt_to_docx.openai_client import OpenAIJsonClient
+
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    monkeypatch.setenv("OPENAI_BASE_URL", "https://example.test/v1")
+
+    client = OpenAIJsonClient("test-model")
+
+    assert str(client.client.base_url) == "https://example.test/v1/"
+
+
 def test_prepare_renames_images_and_writes_manifest(tmp_path: Path) -> None:
     from ppt_to_docx.paths import RunPaths
     from ppt_to_docx.prepare import prepare_sources

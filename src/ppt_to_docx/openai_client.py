@@ -19,7 +19,8 @@ class OpenAIJsonClient:
         load_dotenv()
         if not os.environ.get("OPENAI_API_KEY"):
             raise RuntimeError("缺少 OPENAI_API_KEY：请在 .env 中设置后再运行 extract 或 run")
-        self.client = OpenAI()
+        base_url = os.environ.get("OPENAI_BASE_URL")
+        self.client = OpenAI(base_url=base_url) if base_url else OpenAI()
         self.model = model
 
     def image_json(self, image: Path, prompt: str, schema: type[T]) -> T:
@@ -38,4 +39,3 @@ class OpenAIJsonClient:
     def text_json(self, payload: object, prompt: str, schema: type[T]) -> T:
         response = self.client.responses.create(model=self.model, input=f"{prompt}\n\n输入 JSON：\n{json.dumps(payload, ensure_ascii=False)}", text={"format": {"type": "json_schema", "name": schema.__name__.lower(), "strict": True, "schema": schema.model_json_schema()}})
         return schema.model_validate(json.loads(response.output_text))
-
