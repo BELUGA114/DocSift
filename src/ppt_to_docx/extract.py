@@ -22,10 +22,14 @@ def extract_all(
     for index, source in enumerate(manifest.sources, 1):
         target = paths.extraction_dir / f"{source.source_id}.json"
         if target.exists():
+            cached = Extraction.model_validate_json(target.read_text(encoding="utf-8"))
+            if not cached.error:
+                if status:
+                    status(f"[{index}/{total}] {source.source_id} 使用缓存")
+                results.append(cached)
+                continue
             if status:
-                status(f"[{index}/{total}] {source.source_id} 使用缓存")
-            results.append(Extraction.model_validate_json(target.read_text(encoding="utf-8")))
-            continue
+                status(f"[{index}/{total}] {source.source_id} 重试此前失败的缓存")
         if status:
             status(f"[{index}/{total}] {source.source_id} 正在识别")
         image = paths.input_dir / source.current_name
