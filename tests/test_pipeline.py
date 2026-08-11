@@ -16,6 +16,17 @@ def test_openai_client_reads_base_url_from_environment(monkeypatch) -> None:
     assert str(client.client.base_url) == "https://example.test/v1/"
 
 
+def test_openai_client_reports_responses_endpoint(monkeypatch) -> None:
+    from ppt_to_docx.openai_client import OpenAIJsonClient
+
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    monkeypatch.setenv("OPENAI_BASE_URL", "http://192.168.1.108:8080/v1")
+
+    client = OpenAIJsonClient("test-model")
+
+    assert client.responses_endpoint == "http://192.168.1.108:8080/v1/responses"
+
+
 def test_extract_reports_per_source_progress(tmp_path: Path) -> None:
     from ppt_to_docx.extract import extract_all
     from ppt_to_docx.models import Extraction, Manifest, RunPaths, Source

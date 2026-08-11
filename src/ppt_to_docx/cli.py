@@ -30,7 +30,7 @@ def extract(root: Path = Path(".")) -> None:
     paths = _paths(root)
     model = os.getenv("OPENAI_VISION_MODEL", "gpt-5.6-terra")
     typer.echo(f"开始逐图识别，模型：{model}")
-    typer.echo(f"已提取 {len(extract_all(paths, OpenAIJsonClient(model), typer.echo))} 张图片")
+    typer.echo(f"已提取 {len(extract_all(paths, OpenAIJsonClient(model, typer.echo), typer.echo))} 张图片")
 
 
 @app.command()
@@ -38,7 +38,20 @@ def organize(root: Path = Path(".")) -> None:
     paths = _paths(root)
     model = os.getenv("OPENAI_ORGANIZATION_MODEL", "gpt-5.6-terra")
     typer.echo(f"开始跨图整理，模型：{model}")
-    typer.echo(f"已整理 {len(organize_content(paths, OpenAIJsonClient(model), typer.echo).units)} 个内容块")
+    typer.echo(f"已整理 {len(organize_content(paths, OpenAIJsonClient(model, typer.echo), typer.echo).units)} 个内容块")
+
+
+@app.command()
+def diagnose() -> None:
+    """发送一条纯文本请求，用于验证代理到模型的最小调用链。"""
+    model = os.getenv("OPENAI_VISION_MODEL", "gpt-5.6-terra")
+    client = OpenAIJsonClient(model, typer.echo)
+    typer.echo(f"诊断开始：模型：{model}")
+    try:
+        typer.echo(f"模型回复：{client.ping()}")
+    except Exception as error:
+        typer.echo(f"诊断失败：{type(error).__name__}: {error}", err=True)
+        raise typer.Exit(1) from error
 
 
 @app.command()
