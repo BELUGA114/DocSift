@@ -5,4 +5,4 @@ work/
 output/
 input/
 *.py[cod]
-
+*.egg-info/
