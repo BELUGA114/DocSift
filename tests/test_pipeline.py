@@ -5,6 +5,29 @@ from pathlib import Path
 from PIL import Image
 
 
+def _assert_openai_strict_schema(schema: dict[str, object]) -> None:
+    def visit(node: object) -> None:
+        if isinstance(node, dict):
+            if node.get("type") == "object":
+                properties = node.get("properties", {})
+                assert node.get("additionalProperties") is False
+                assert set(node.get("required", [])) == set(properties)
+            for value in node.values():
+                visit(value)
+        elif isinstance(node, list):
+            for value in node:
+                visit(value)
+
+    visit(schema)
+
+
+def test_api_response_models_generate_openai_strict_schemas() -> None:
+    from ppt_to_docx.models import ExtractionPayload, OrganizationPayload
+
+    _assert_openai_strict_schema(ExtractionPayload.model_json_schema())
+    _assert_openai_strict_schema(OrganizationPayload.model_json_schema())
+
+
 def test_openai_client_reads_base_url_from_environment(monkeypatch) -> None:
     from ppt_to_docx.openai_client import OpenAIJsonClient
 
@@ -85,7 +108,7 @@ def test_schema_image_diagnostic_requests_json_schema(monkeypatch, tmp_path: Pat
 
 def test_extract_reports_per_source_progress(tmp_path: Path) -> None:
     from ppt_to_docx.extract import extract_all
-    from ppt_to_docx.models import Extraction, Manifest, RunPaths, Source
+    from ppt_to_docx.models import ExtractionPayload, Manifest, RunPaths, Source
 
     paths = RunPaths.from_root(tmp_path)
     paths.input_dir.mkdir()
@@ -98,8 +121,8 @@ def test_extract_reports_per_source_progress(tmp_path: Path) -> None:
     class FakeClient:
         model = "test-model"
 
-        def image_json(self, image: Path, prompt: str, schema: type[Extraction]) -> Extraction:
-            return Extraction(source_id="ignored", model="ignored", image_sha256="ignored", prompt_version="ignored")
+        def image_json(self, image: Path, prompt: str, schema: type[ExtractionPayload]) -> ExtractionPayload:
+            return ExtractionPayload(title=None, paragraphs=[], tables=[], diagram_text=[], page_hint=None, quality="clear", uncertain_items=[])
 
     extract_all(paths, FakeClient(), status=messages.append)  # type: ignore[arg-type]
 
@@ -108,7 +131,7 @@ def test_extract_reports_per_source_progress(tmp_path: Path) -> None:
 
 def test_extract_retries_a_cached_failure(tmp_path: Path) -> None:
     from ppt_to_docx.extract import extract_all
-    from ppt_to_docx.models import Extraction, Manifest, RunPaths, Source
+    from ppt_to_docx.models import Extraction, ExtractionPayload, Manifest, RunPaths, Source
 
     paths = RunPaths.from_root(tmp_path)
     paths.input_dir.mkdir()
@@ -122,8 +145,8 @@ def test_extract_retries_a_cached_failure(tmp_path: Path) -> None:
     class FakeClient:
         model = "test-model"
 
-        def image_json(self, image: Path, prompt: str, schema: type[Extraction]) -> Extraction:
-            return Extraction(source_id="ignored", model="ignored", image_sha256="ignored", prompt_version="ignored")
+        def image_json(self, image: Path, prompt: str, schema: type[ExtractionPayload]) -> ExtractionPayload:
+            return ExtractionPayload(title=None, paragraphs=[], tables=[], diagram_text=[], page_hint=None, quality="clear", uncertain_items=[])
 
     result = extract_all(paths, FakeClient())  # type: ignore[arg-type]
 

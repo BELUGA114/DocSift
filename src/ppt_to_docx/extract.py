@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from collections.abc import Callable
 
-from .models import Extraction, Manifest, RunPaths, UncertainItem
+from .models import Extraction, ExtractionPayload, Manifest, RunPaths, UncertainItem
 from .openai_client import OpenAIJsonClient
 
 PROMPT_VERSION = "2026-08-11"
@@ -34,8 +34,14 @@ def extract_all(
             status(f"[{index}/{total}] {source.source_id} 正在识别")
         image = paths.input_dir / source.current_name
         try:
-            result = client.image_json(image, EXTRACTION_PROMPT, Extraction)
-            result = result.model_copy(update={"source_id": source.source_id, "model": client.model, "image_sha256": source.sha256, "prompt_version": PROMPT_VERSION})
+            payload = client.image_json(image, EXTRACTION_PROMPT, ExtractionPayload)
+            result = Extraction(
+                source_id=source.source_id,
+                model=client.model,
+                image_sha256=source.sha256,
+                prompt_version=PROMPT_VERSION,
+                **payload.model_dump(),
+            )
         except Exception as error:
             result = Extraction(source_id=source.source_id, model=client.model, image_sha256=source.sha256, prompt_version=PROMPT_VERSION, error=str(error), uncertain_items=[UncertainItem(text="【待确认：此图片识别失败】", reason=str(error), sources=[source.source_id])])
         target.write_text(result.model_dump_json(indent=2), encoding="utf-8")

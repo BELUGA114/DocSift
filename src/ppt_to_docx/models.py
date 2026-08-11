@@ -3,7 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class StrictApiModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
 
 
 class Source(BaseModel):
@@ -59,6 +63,40 @@ class Organization(BaseModel):
     uncertain_items: list[UncertainItem] = Field(default_factory=list)
 
 
+class ApiUncertainItem(StrictApiModel):
+    text: str
+    reason: str
+    sources: list[str]
+
+
+class ApiTableData(StrictApiModel):
+    rows: list[list[str]]
+
+
+class ExtractionPayload(StrictApiModel):
+    title: str | None
+    paragraphs: list[str]
+    tables: list[ApiTableData]
+    diagram_text: list[str]
+    page_hint: str | None
+    quality: str
+    uncertain_items: list[ApiUncertainItem]
+
+
+class ApiContentUnit(StrictApiModel):
+    heading: str | None
+    level: int
+    paragraphs: list[str]
+    tables: list[ApiTableData]
+    sources: list[str]
+
+
+class OrganizationPayload(StrictApiModel):
+    title: str
+    units: list[ApiContentUnit]
+    uncertain_items: list[ApiUncertainItem]
+
+
 @dataclass(frozen=True)
 class RunPaths:
     root: Path
@@ -79,4 +117,3 @@ class RunPaths:
     @property
     def organization_path(self) -> Path:
         return self.work_dir / "organization.json"
-
