@@ -27,6 +27,8 @@
 
 `OPENAI_IMAGE_DETAIL` 控制识别请求的图片细节，默认 `low`。局域网 Sub2API 已验证该值可用；只有在上游支持时才将其改为 `auto` 或 `original`。
 
+`OPENAI_STRUCTURED_OUTPUTS` 默认为 `false`，此时不向代理发送 `text.format`，而由模型返回 JSON 文本并在本地严格校验。官方端点或完整支持 Structured Outputs 的代理可将其设为 `true`。
+
 首次连接代理时，先运行 `python -m ppt_to_docx diagnose`。该命令只发送一条纯文本请求，并输出实际请求的 `/v1/responses` 地址、模型、响应 ID 或错误摘要。
 
 若纯文本诊断成功但识别失败，运行 `python -m ppt_to_docx diagnose-image`。它只发送 `input/source-001.jpg`，以 `detail=low` 请求图片理解，不使用 JSON Schema，可定位代理是否支持视觉输入。

@@ -27,6 +27,7 @@ class OpenAIJsonClient:
         self.image_detail = os.environ.get("OPENAI_IMAGE_DETAIL", "low")
         if self.image_detail not in {"low", "auto", "original"}:
             raise ValueError("OPENAI_IMAGE_DETAIL 必须是 low、auto 或 original")
+        self.structured_outputs = os.environ.get("OPENAI_STRUCTURED_OUTPUTS", "false").lower() in {"1", "true", "yes", "on"}
 
     @property
     def responses_endpoint(self) -> str:
@@ -36,13 +37,23 @@ class OpenAIJsonClient:
         if self.reporter:
             self.reporter(message)
 
+    def _json_request(self, prompt: str, schema: type[T]) -> tuple[str, dict[str, object]]:
+        schema_value = schema.model_json_schema()
+        if self.structured_outputs:
+            return prompt, {"text": {"format": {"type": "json_schema", "name": schema.__name__.lower(), "strict": True, "schema": schema_value}}}
+        schema_text = json.dumps(schema_value, ensure_ascii=False, separators=(",", ":"))
+        compatible_prompt = f"{prompt}\n\n只返回符合以下 JSON Schema 的 JSON，不要使用 Markdown 代码块或添加解释：\n{schema_text}"
+        return compatible_prompt, {}
+
     def image_json(self, image: Path, prompt: str, schema: type[T]) -> T:
         encoded = base64.b64encode(image.read_bytes()).decode("ascii")
         request = {"type": "input_image", "image_url": f"data:image/jpeg;base64,{encoded}", "detail": self.image_detail}
+        request_prompt, response_options = self._json_request(prompt, schema)
         for attempt in range(3):
             try:
-                self._report(f"API 请求 {attempt + 1}/3：POST {self.responses_endpoint}，模型：{self.model}，输入：图片，detail={self.image_detail}")
-                response = self.client.responses.create(model=self.model, input=[{"role": "user", "content": [{"type": "input_text", "text": prompt}, request]}], text={"format": {"type": "json_schema", "name": schema.__name__.lower(), "strict": True, "schema": schema.model_json_schema()}})
+                mode = "Structured Outputs" if self.structured_outputs else "兼容 JSON"
+                self._report(f"API 请求 {attempt + 1}/3：POST {self.responses_endpoint}，模型：{self.model}，输入：图片，detail={self.image_detail}，输出：{mode}")
+                response = self.client.responses.create(model=self.model, input=[{"role": "user", "content": [{"type": "input_text", "text": request_prompt}, request]}], **response_options)
                 self._report(f"API 响应成功：response_id={response.id}")
                 return schema.model_validate(json.loads(response.output_text))
             except Exception as error:
@@ -53,8 +64,10 @@ class OpenAIJsonClient:
         raise AssertionError("不可达")
 
     def text_json(self, payload: object, prompt: str, schema: type[T]) -> T:
-        self._report(f"API 请求：POST {self.responses_endpoint}，模型：{self.model}，输入：整理 JSON")
-        response = self.client.responses.create(model=self.model, input=f"{prompt}\n\n输入 JSON：\n{json.dumps(payload, ensure_ascii=False)}", text={"format": {"type": "json_schema", "name": schema.__name__.lower(), "strict": True, "schema": schema.model_json_schema()}})
+        request_prompt, response_options = self._json_request(prompt, schema)
+        mode = "Structured Outputs" if self.structured_outputs else "兼容 JSON"
+        self._report(f"API 请求：POST {self.responses_endpoint}，模型：{self.model}，输入：整理 JSON，输出：{mode}")
+        response = self.client.responses.create(model=self.model, input=f"{request_prompt}\n\n输入 JSON：\n{json.dumps(payload, ensure_ascii=False)}", **response_options)
         self._report(f"API 响应成功：response_id={response.id}")
         return schema.model_validate(json.loads(response.output_text))
 

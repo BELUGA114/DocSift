@@ -106,6 +106,33 @@ def test_schema_image_diagnostic_requests_json_schema(monkeypatch, tmp_path: Pat
     assert captured["text"]["format"]["type"] == "json_schema"  # type: ignore[index]
 
 
+def test_image_json_compatibility_mode_omits_text_format(monkeypatch, tmp_path: Path) -> None:
+    from ppt_to_docx.models import ExtractionPayload
+    from ppt_to_docx.openai_client import OpenAIJsonClient
+
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    monkeypatch.delenv("OPENAI_STRUCTURED_OUTPUTS", raising=False)
+    image = tmp_path / "image.jpg"
+    Image.new("RGB", (12, 8), "white").save(image)
+    client = OpenAIJsonClient("test-model")
+    captured: dict[str, object] = {}
+
+    class Response:
+        id = "resp_test"
+        output_text = '{"title":null,"paragraphs":[],"tables":[],"diagram_text":[],"page_hint":null,"quality":"clear","uncertain_items":[]}'
+
+    def create(**request: object) -> Response:
+        captured.update(request)
+        return Response()
+
+    monkeypatch.setattr(client.client.responses, "create", create)
+
+    result = client.image_json(image, "extract", ExtractionPayload)
+
+    assert result.quality == "clear"
+    assert "text" not in captured
+
+
 def test_extract_reports_per_source_progress(tmp_path: Path) -> None:
     from ppt_to_docx.extract import extract_all
     from ppt_to_docx.models import ExtractionPayload, Manifest, RunPaths, Source
