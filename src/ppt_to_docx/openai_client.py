@@ -24,6 +24,9 @@ class OpenAIJsonClient:
         self.client = OpenAI(base_url=base_url) if base_url else OpenAI()
         self.model = model
         self.reporter = reporter
+        self.image_detail = os.environ.get("OPENAI_IMAGE_DETAIL", "low")
+        if self.image_detail not in {"low", "auto", "original"}:
+            raise ValueError("OPENAI_IMAGE_DETAIL 必须是 low、auto 或 original")
 
     @property
     def responses_endpoint(self) -> str:
@@ -35,10 +38,10 @@ class OpenAIJsonClient:
 
     def image_json(self, image: Path, prompt: str, schema: type[T]) -> T:
         encoded = base64.b64encode(image.read_bytes()).decode("ascii")
-        request = {"type": "input_image", "image_url": f"data:image/jpeg;base64,{encoded}", "detail": "original"}
+        request = {"type": "input_image", "image_url": f"data:image/jpeg;base64,{encoded}", "detail": self.image_detail}
         for attempt in range(3):
             try:
-                self._report(f"API 请求 {attempt + 1}/3：POST {self.responses_endpoint}，模型：{self.model}，输入：图片")
+                self._report(f"API 请求 {attempt + 1}/3：POST {self.responses_endpoint}，模型：{self.model}，输入：图片，detail={self.image_detail}")
                 response = self.client.responses.create(model=self.model, input=[{"role": "user", "content": [{"type": "input_text", "text": prompt}, request]}], text={"format": {"type": "json_schema", "name": schema.__name__.lower(), "strict": True, "schema": schema.model_json_schema()}})
                 self._report(f"API 响应成功：response_id={response.id}")
                 return schema.model_validate(json.loads(response.output_text))

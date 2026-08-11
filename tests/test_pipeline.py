@@ -16,6 +16,15 @@ def test_openai_client_reads_base_url_from_environment(monkeypatch) -> None:
     assert str(client.client.base_url) == "https://example.test/v1/"
 
 
+def test_openai_client_defaults_to_low_image_detail(monkeypatch) -> None:
+    from ppt_to_docx.openai_client import OpenAIJsonClient
+
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    monkeypatch.delenv("OPENAI_IMAGE_DETAIL", raising=False)
+
+    assert OpenAIJsonClient("test-model").image_detail == "low"
+
+
 def test_openai_client_reports_responses_endpoint(monkeypatch) -> None:
     from ppt_to_docx.openai_client import OpenAIJsonClient
 

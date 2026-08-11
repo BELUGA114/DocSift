@@ -25,6 +25,8 @@
 
 识别和整理阶段会调用 OpenAI API 并产生费用；先检查 `OPENAI_VISION_MODEL` 与 `OPENAI_ORGANIZATION_MODEL` 配置。没有密钥时，`prepare` 和 `render` 仍可单独运行。
 
+`OPENAI_IMAGE_DETAIL` 控制识别请求的图片细节，默认 `low`。局域网 Sub2API 已验证该值可用；只有在上游支持时才将其改为 `auto` 或 `original`。
+
 首次连接代理时，先运行 `python -m ppt_to_docx diagnose`。该命令只发送一条纯文本请求，并输出实际请求的 `/v1/responses` 地址、模型、响应 ID 或错误摘要。
 
 若纯文本诊断成功但识别失败，运行 `python -m ppt_to_docx diagnose-image`。它只发送 `input/source-001.jpg`，以 `detail=low` 请求图片理解，不使用 JSON Schema，可定位代理是否支持视觉输入。
