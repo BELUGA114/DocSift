@@ -69,6 +69,21 @@ def diagnose_image(image: Path = Path("input/source-001.jpg")) -> None:
         raise typer.Exit(1) from error
 
 
+@app.command(name="diagnose-image-schema")
+def diagnose_image_schema(image: Path = Path("input/source-001.jpg")) -> None:
+    """发送低细节且结构化的图片请求，验证 JSON Schema 转发。"""
+    if not image.is_file():
+        raise typer.BadParameter(f"图片不存在：{image}")
+    model = os.getenv("OPENAI_VISION_MODEL", "gpt-5.6-terra")
+    client = OpenAIJsonClient(model, typer.echo)
+    typer.echo(f"结构化图片诊断开始：模型：{model}，图片：{image}")
+    try:
+        typer.echo(f"模型回复：{client.image_schema_text(image)}")
+    except Exception as error:
+        typer.echo(f"结构化图片诊断失败：{type(error).__name__}: {error}", err=True)
+        raise typer.Exit(1) from error
+
+
 @app.command()
 def render(root: Path = Path(".")) -> None:
     paths = _paths(root)

@@ -28,3 +28,5 @@
 首次连接代理时，先运行 `python -m ppt_to_docx diagnose`。该命令只发送一条纯文本请求，并输出实际请求的 `/v1/responses` 地址、模型、响应 ID 或错误摘要。
 
 若纯文本诊断成功但识别失败，运行 `python -m ppt_to_docx diagnose-image`。它只发送 `input/source-001.jpg`，以 `detail=low` 请求图片理解，不使用 JSON Schema，可定位代理是否支持视觉输入。
+
+若图片诊断成功，运行 `python -m ppt_to_docx diagnose-image-schema`。它保持 `detail=low`，但启用严格 JSON Schema，以区分结构化输出限制和高分辨率图片限制。
