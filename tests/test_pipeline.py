@@ -27,6 +27,30 @@ def test_openai_client_reports_responses_endpoint(monkeypatch) -> None:
     assert client.responses_endpoint == "http://192.168.1.108:8080/v1/responses"
 
 
+def test_image_diagnostic_uses_low_detail_without_schema(monkeypatch, tmp_path: Path) -> None:
+    from ppt_to_docx.openai_client import OpenAIJsonClient
+
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    image = tmp_path / "image.jpg"
+    Image.new("RGB", (12, 8), "white").save(image)
+    client = OpenAIJsonClient("test-model")
+    captured: dict[str, object] = {}
+
+    class Response:
+        id = "resp_test"
+        output_text = "PONG"
+
+    def create(**request: object) -> Response:
+        captured.update(request)
+        return Response()
+
+    monkeypatch.setattr(client.client.responses, "create", create)
+
+    assert client.image_text(image) == "PONG"
+    content = captured["input"][0]["content"]  # type: ignore[index]
+    assert content[1]["detail"] == "low"  # type: ignore[index]
+
+
 def test_extract_reports_per_source_progress(tmp_path: Path) -> None:
     from ppt_to_docx.extract import extract_all
     from ppt_to_docx.models import Extraction, Manifest, RunPaths, Source

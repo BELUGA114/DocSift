@@ -64,3 +64,15 @@ class OpenAIJsonClient:
             raise
         self._report(f"诊断响应成功：response_id={response.id}")
         return response.output_text
+
+    def image_text(self, image: Path) -> str:
+        encoded = base64.b64encode(image.read_bytes()).decode("ascii")
+        request = {"type": "input_image", "image_url": f"data:image/jpeg;base64,{encoded}", "detail": "low"}
+        self._report(f"图片诊断请求：POST {self.responses_endpoint}，模型：{self.model}，图片：{image.name}，detail=low，无 JSON Schema")
+        try:
+            response = self.client.responses.create(model=self.model, input=[{"role": "user", "content": [{"type": "input_text", "text": "Reply with exactly PONG after confirming you received the image."}, request]}])
+        except Exception as error:
+            self._report(f"图片诊断失败：{type(error).__name__}: {error}")
+            raise
+        self._report(f"图片诊断响应成功：response_id={response.id}")
+        return response.output_text
