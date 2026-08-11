@@ -29,14 +29,16 @@ def prepare(root: Path = Path(".")) -> None:
 def extract(root: Path = Path(".")) -> None:
     paths = _paths(root)
     model = os.getenv("OPENAI_VISION_MODEL", "gpt-5.6-terra")
-    typer.echo(f"已提取 {len(extract_all(paths, OpenAIJsonClient(model)))} 张图片")
+    typer.echo(f"开始逐图识别，模型：{model}")
+    typer.echo(f"已提取 {len(extract_all(paths, OpenAIJsonClient(model), typer.echo))} 张图片")
 
 
 @app.command()
 def organize(root: Path = Path(".")) -> None:
     paths = _paths(root)
     model = os.getenv("OPENAI_ORGANIZATION_MODEL", "gpt-5.6-terra")
-    typer.echo(f"已整理 {len(organize_content(paths, OpenAIJsonClient(model)).units)} 个内容块")
+    typer.echo(f"开始跨图整理，模型：{model}")
+    typer.echo(f"已整理 {len(organize_content(paths, OpenAIJsonClient(model), typer.echo).units)} 个内容块")
 
 
 @app.command()
@@ -55,4 +57,3 @@ def run(root: Path = Path(".")) -> None:
     extract(root)
     organize(root)
     render(root)
-
