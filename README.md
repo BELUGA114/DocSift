@@ -6,15 +6,15 @@
 
 ## 安装
 
-```powershell
-.venv\Scripts\Activate.ps1
+建议使用隔离的 Python 环境。可以使用 `venv`、`uv`、Poetry、Conda 或其他环境管理工具；请先按所选工具的方式创建并激活项目环境，然后执行：
+
+```sh
 python -m pip install -e ".[dev]"
-Copy-Item .env.example .env
 ```
 
-建议始终在项目虚拟环境中运行。PowerShell 如果禁止执行激活脚本，可以直接使用项目虚拟环境中的 Python，但不需要把完整解释器路径写进每条命令。
+将 `.env.example` 复制为 `.env`，再填写其中的 `OPENAI_API_KEY`。复制方式随系统和 shell 而异；也可以直接通过文件管理器完成复制。
 
-在 `.env` 中填写 `OPENAI_API_KEY`。`OPENAI_BASE_URL` 可以使用官方 Responses API 地址，也可以指向兼容 Responses API 的局域网代理。
+后续所有 `python` 命令都应在这个项目环境中执行。`OPENAI_BASE_URL` 可以使用官方 Responses API 地址，也可以指向兼容 Responses API 的局域网代理。
 
 ## 输入与输出
 
@@ -22,13 +22,13 @@ Copy-Item .env.example .env
 
 执行完整流程：
 
-```powershell
+```sh
 python -m ppt_to_docx run  # 连续执行准备、逐页识别、跨页整理和文件输出
 ```
 
 也可以分步执行：
 
-```powershell
+```sh
 python -m ppt_to_docx prepare   # 扫描输入、统一命名，并生成图片/PDF页面 manifest
 python -m ppt_to_docx extract   # 逐页调用视觉模型识别文字、表格和图中文字
 python -m ppt_to_docx organize  # 将所有页面文本交给模型去重、排序并组织上下文
@@ -53,7 +53,7 @@ python -m ppt_to_docx render    # 根据整理 JSON 输出 DOCX 或 Markdown
 
 首次连接代理时运行：
 
-```powershell
+```sh
 python -m ppt_to_docx diagnose             # 只请求纯文本，验证 API 地址、密钥和模型
 python -m ppt_to_docx diagnose-image       # 请求一张图片，验证视觉输入链路
 python -m ppt_to_docx diagnose-image-schema # 请求图片和简单 Schema，验证结构化输出
@@ -63,7 +63,7 @@ python -m ppt_to_docx diagnose-image-schema # 请求图片和简单 Schema，验
 
 ## 开发
 
-```powershell
+```sh
 python -m pytest
 python -m pip install -e ".[dev]"
 ```
