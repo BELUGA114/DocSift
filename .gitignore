@@ -1,6 +1,49 @@
+# 环境变量与密钥 
 .env
+.env.local
+.env.*.local
+!.env.example
+
+# Python 
 __pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
 .pytest_cache/
+.mypy_cache/
+*.egg-info/
+dist/
+build/
+*.log
+
+# IDE 
+.idea/
+.vscode/
+*.iml
+.project
+.classpath
+
+# 系统文件 
+.DS_Store
+Thumbs.db
+
+# 临时文件 
+*.tmp
+*.bak
+*.swp
+*.swo
+*~
+
+# AI
+CLAUDE.md
+.claude/
+AGENTS.md
+.codex/
+
+# 辅助文档（调研笔记、规划等，不纳入版本管理）
+docs/
 work/
 output/
 input/
