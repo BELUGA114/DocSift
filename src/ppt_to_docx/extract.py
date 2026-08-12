@@ -6,8 +6,8 @@ from collections.abc import Callable
 from .models import Extraction, ExtractionPayload, Manifest, RunPaths, UncertainItem
 from .openai_client import OpenAIJsonClient
 
-PROMPT_VERSION = "2026-08-11"
-EXTRACTION_PROMPT = "识别此 PPT 拍摄图中的全部可读文字。提取标题、阅读顺序段落、二维表格和流程图标签。不要推断遮挡或模糊文字；将其放入 uncertain_items，text 必须以【待确认：开头。"
+PROMPT_VERSION = "2026-08-12"
+EXTRACTION_PROMPT = "识别此页面图像中的全部可读文字。提取标题、按阅读顺序排列的段落、二维表格和流程图/示意图中的文字标签。不要推断遮挡或模糊文字；将其放入 uncertain_items，text 必须以【待确认：开头。"
 
 
 def extract_all(
@@ -32,7 +32,7 @@ def extract_all(
                 status(f"[{index}/{total}] {source.source_id} 重试此前失败的缓存")
         if status:
             status(f"[{index}/{total}] {source.source_id} 正在识别")
-        image = paths.input_dir / source.current_name
+        image = paths.root / (source.asset_path or f"input/{source.current_name}")
         try:
             payload = client.image_json(image, EXTRACTION_PROMPT, ExtractionPayload)
             result = Extraction(
@@ -43,7 +43,7 @@ def extract_all(
                 **payload.model_dump(),
             )
         except Exception as error:
-            result = Extraction(source_id=source.source_id, model=client.model, image_sha256=source.sha256, prompt_version=PROMPT_VERSION, error=str(error), uncertain_items=[UncertainItem(text="【待确认：此图片识别失败】", reason=str(error), sources=[source.source_id])])
+            result = Extraction(source_id=source.source_id, model=client.model, image_sha256=source.sha256, prompt_version=PROMPT_VERSION, error=str(error), uncertain_items=[UncertainItem(text="【待确认：此页面识别失败】", reason=str(error), sources=[source.source_id])])
         target.write_text(result.model_dump_json(indent=2), encoding="utf-8")
         results.append(result)
         if status:

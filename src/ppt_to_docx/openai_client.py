@@ -4,6 +4,7 @@ import base64
 import json
 import os
 import time
+import mimetypes
 from pathlib import Path
 from typing import TypeVar
 from collections.abc import Callable
@@ -47,7 +48,8 @@ class OpenAIJsonClient:
 
     def image_json(self, image: Path, prompt: str, schema: type[T]) -> T:
         encoded = base64.b64encode(image.read_bytes()).decode("ascii")
-        request = {"type": "input_image", "image_url": f"data:image/jpeg;base64,{encoded}", "detail": self.image_detail}
+        media_type = mimetypes.guess_type(image.name)[0] or "image/jpeg"
+        request = {"type": "input_image", "image_url": f"data:{media_type};base64,{encoded}", "detail": self.image_detail}
         request_prompt, response_options = self._json_request(prompt, schema)
         for attempt in range(3):
             try:

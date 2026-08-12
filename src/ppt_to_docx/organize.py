@@ -5,7 +5,7 @@ from collections.abc import Callable
 from .models import Extraction, Organization, OrganizationPayload, RunPaths
 from .openai_client import OpenAIJsonClient
 
-ORGANIZE_PROMPT = "将这些 PPT 文本块去重、按逻辑排序并组织为中文讲义。不得改变原意。每个 unit 的 sources 必须非空；不确定文字必须原样保留【待确认：…】。"
+ORGANIZE_PROMPT = "将这些来自多个页面的文本块去重、按上下文和逻辑顺序组织为清晰的中文文档。不得改变原意，不要凭空补写。保留表格结构和流程图/示意图中的文字信息。每个 unit 的 sources 必须非空；不确定文字必须原样保留【待确认：…】。"
 
 
 def organize_content(

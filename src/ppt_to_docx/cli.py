@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import Annotated
 
 import typer
 
@@ -19,10 +20,19 @@ def _paths(root: Path) -> RunPaths:
     return RunPaths.from_root(root)
 
 
+def _diagnostic_image(image: Path | None) -> Path:
+    if image is not None:
+        return image
+    candidates = sorted(Path("input").glob("source-*.jpg")) + sorted(Path("input").glob("source-*.jpeg")) + sorted(Path("input").glob("source-*.png")) + sorted(Path("work/pages").glob("**/page-*.png"))
+    if not candidates:
+        raise typer.BadParameter("未找到诊断图片；先运行 prepare，或使用 image 参数指定图片")
+    return candidates[0]
+
+
 @app.command()
 def prepare(root: Path = Path(".")) -> None:
     manifest = prepare_sources(_paths(root))
-    typer.echo(f"已准备 {len(manifest.sources)} 张图片")
+    typer.echo(f"已准备 {len(manifest.sources)} 个页面资产")
 
 
 @app.command()
@@ -30,7 +40,7 @@ def extract(root: Path = Path(".")) -> None:
     paths = _paths(root)
     model = os.getenv("OPENAI_VISION_MODEL", "gpt-5.6-terra")
     typer.echo(f"开始逐图识别，模型：{model}")
-    typer.echo(f"已提取 {len(extract_all(paths, OpenAIJsonClient(model, typer.echo), typer.echo))} 张图片")
+    typer.echo(f"已提取 {len(extract_all(paths, OpenAIJsonClient(model, typer.echo), typer.echo))} 个页面")
 
 
 @app.command()
@@ -55,8 +65,9 @@ def diagnose() -> None:
 
 
 @app.command(name="diagnose-image")
-def diagnose_image(image: Path = Path("input/source-001.jpg")) -> None:
+def diagnose_image(image: Annotated[Path | None, typer.Argument()] = None) -> None:
     """发送低细节图片请求，验证视觉输入是否能穿过代理。"""
+    image = _diagnostic_image(image)
     if not image.is_file():
         raise typer.BadParameter(f"图片不存在：{image}")
     model = os.getenv("OPENAI_VISION_MODEL", "gpt-5.6-terra")
@@ -70,8 +81,9 @@ def diagnose_image(image: Path = Path("input/source-001.jpg")) -> None:
 
 
 @app.command(name="diagnose-image-schema")
-def diagnose_image_schema(image: Path = Path("input/source-001.jpg")) -> None:
+def diagnose_image_schema(image: Annotated[Path | None, typer.Argument()] = None) -> None:
     """发送低细节且结构化的图片请求，验证 JSON Schema 转发。"""
+    image = _diagnostic_image(image)
     if not image.is_file():
         raise typer.BadParameter(f"图片不存在：{image}")
     model = os.getenv("OPENAI_VISION_MODEL", "gpt-5.6-terra")
@@ -90,7 +102,7 @@ def render(root: Path = Path(".")) -> None:
     from .models import Organization
     organization = Organization.model_validate_json(paths.organization_path.read_text(encoding="utf-8"))
     render_document(paths, organization)
-    typer.echo("已生成 output/ppt_讲义.docx")
+    typer.echo("已生成 output/整理结果.docx")
 
 
 @app.command()

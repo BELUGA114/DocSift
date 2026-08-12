@@ -39,11 +39,11 @@ def test_openai_client_reads_base_url_from_environment(monkeypatch) -> None:
     assert str(client.client.base_url) == "https://example.test/v1/"
 
 
-def test_openai_client_defaults_to_low_image_detail(monkeypatch) -> None:
+def test_openai_client_accepts_low_image_detail(monkeypatch) -> None:
     from ppt_to_docx.openai_client import OpenAIJsonClient
 
     monkeypatch.setenv("OPENAI_API_KEY", "test-key")
-    monkeypatch.delenv("OPENAI_IMAGE_DETAIL", raising=False)
+    monkeypatch.setenv("OPENAI_IMAGE_DETAIL", "low")
 
     assert OpenAIJsonClient("test-model").image_detail == "low"
 
@@ -194,3 +194,25 @@ def test_prepare_renames_images_and_writes_manifest(tmp_path: Path) -> None:
     assert [entry.current_name for entry in manifest.sources] == ["source-001.jpg", "source-002.jpg"]
     assert (input_dir / "source-001.jpg").exists()
     assert (tmp_path / "work" / "manifest.json").exists()
+
+
+def test_prepare_renders_pdf_pages_to_work_assets(tmp_path: Path, monkeypatch) -> None:
+    import fitz
+
+    from ppt_to_docx.paths import RunPaths
+    from ppt_to_docx.prepare import prepare_sources
+
+    input_dir = tmp_path / "input"
+    input_dir.mkdir()
+    pdf = fitz.open()
+    pdf.new_page(width=120, height=80)
+    pdf.new_page(width=120, height=80)
+    pdf.save(input_dir / "notes.pdf")
+    pdf.close()
+    monkeypatch.setenv("PDF_RENDER_DPI", "72")
+
+    manifest = prepare_sources(RunPaths.from_root(tmp_path))
+
+    assert [entry.source_id for entry in manifest.sources] == ["source-001-page-001", "source-001-page-002"]
+    assert all(entry.page_number in {1, 2} for entry in manifest.sources)
+    assert (tmp_path / "work" / "pages" / "source-001" / "page-001.png").exists()

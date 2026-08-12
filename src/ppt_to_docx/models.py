@@ -14,6 +14,9 @@ class Source(BaseModel):
     source_id: str
     original_name: str
     current_name: str
+    asset_path: str | None = None
+    source_type: str = "image"
+    page_number: int | None = None
     sha256: str
     width: int
     height: int
@@ -58,7 +61,7 @@ class ContentUnit(BaseModel):
 
 
 class Organization(BaseModel):
-    title: str = "PPT 讲义"
+    title: str = "整理结果"
     units: list[ContentUnit]
     uncertain_items: list[UncertainItem] = Field(default_factory=list)
 
@@ -109,6 +112,10 @@ class RunPaths:
     def from_root(cls, root: Path) -> RunPaths:
         root = root.resolve()
         return cls(root, root / "input", root / "work", root / "work" / "extractions", root / "output")
+
+    @property
+    def pages_dir(self) -> Path:
+        return self.work_dir / "pages"
 
     @property
     def manifest_path(self) -> Path:

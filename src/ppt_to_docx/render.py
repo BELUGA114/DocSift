@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 
 from docx import Document
 
@@ -34,6 +35,8 @@ def render_document(paths: RunPaths, organization: Organization) -> None:
     for item in index:
         document.add_paragraph(f"{item['heading'] or '无标题内容'}：{', '.join(item['sources'])}")
     paths.output_dir.mkdir(parents=True, exist_ok=True)
-    document.save(paths.output_dir / "ppt_讲义.docx")
-    (paths.output_dir / "来源索引.json").write_text(json.dumps(index, ensure_ascii=False, indent=2), encoding="utf-8")
-
+    document_name = os.environ.get("OUTPUT_DOCUMENT_NAME", "整理结果.docx")
+    if not document_name.lower().endswith(".docx"):
+        document_name += ".docx"
+    document.save(paths.output_dir / document_name)
+    (paths.output_dir / "source-index.json").write_text(json.dumps(index, ensure_ascii=False, indent=2), encoding="utf-8")
