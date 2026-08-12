@@ -216,3 +216,19 @@ def test_prepare_renders_pdf_pages_to_work_assets(tmp_path: Path, monkeypatch) -
     assert [entry.source_id for entry in manifest.sources] == ["source-001-page-001", "source-001-page-002"]
     assert all(entry.page_number in {1, 2} for entry in manifest.sources)
     assert (tmp_path / "work" / "pages" / "source-001" / "page-001.png").exists()
+
+
+def test_render_can_write_markdown(tmp_path: Path, monkeypatch) -> None:
+    from ppt_to_docx.models import ContentUnit, Organization, RunPaths, TableData
+    from ppt_to_docx.render import render_document
+
+    monkeypatch.setenv("OUTPUT_FORMAT", "markdown")
+    organization = Organization(title="测试文档", units=[ContentUnit(heading="章节", paragraphs=["正文"], tables=[TableData(rows=[["列一", "列二"], ["值一", "值二"]])], sources=["source-001"])])
+
+    output_path = render_document(RunPaths.from_root(tmp_path), organization)
+
+    assert output_path.name == "整理结果.md"
+    content = output_path.read_text(encoding="utf-8")
+    assert "# 测试文档" in content
+    assert "| 列一 | 列二 |" in content
+    assert (tmp_path / "output" / "source-index.json").exists()

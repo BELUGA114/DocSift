@@ -101,8 +101,8 @@ def render(root: Path = Path(".")) -> None:
     paths = _paths(root)
     from .models import Organization
     organization = Organization.model_validate_json(paths.organization_path.read_text(encoding="utf-8"))
-    render_document(paths, organization)
-    typer.echo("已生成 output/整理结果.docx")
+    output_path = render_document(paths, organization)
+    typer.echo(f"已生成 {output_path}")
 
 
 @app.command()
